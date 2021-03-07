@@ -2,6 +2,9 @@ import socket
 import threading
 import select
 import os
+import pickle
+import datetime
+
 
 IP = "127.0.0.1"
 PORT = 8001
@@ -37,8 +40,8 @@ def client(name):
 
 def recv(s: socket.socket):
     while 1:
-        msg = s.recv(1024).decode("UTF-8")
-        messages.append(msg)
+        unpack = pickle.loads(s.recv(1024))
+        messages.append(unpack)
         display_message_history(messages)
 
 
@@ -46,15 +49,17 @@ def send(s: socket.socket, send_addr, name):
     while 1:
         message = input()
         mess = f"{name}: {message}"
-        s.sendto(mess.encode("UTF-8"),send_addr)
-        messages.append(mess)
+        pack = (datetime.datetime.now().isoformat(), mess)
+        pack_enc = pickle.dumps(pack)
+        s.sendto(pack_enc,send_addr)
+        messages.append(pack)
         display_message_history(messages)
 
 
 def display_message_history(messages):
     os.system("clear")
-    for message in messages:
-        print(f"{message}")
+    for message in sorted(messages, key=lambda item: item[0]):
+        print(f"{message[1]}")
 
 
 name = input("Input your name: ")
